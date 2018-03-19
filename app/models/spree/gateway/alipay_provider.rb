@@ -3,12 +3,14 @@ require 'alipay'
 module Spree
   class Gateway::AlipayProvider
     attr_accessor :service
+    attr_accessor :rate
 
     def initialize( options = {})
       ::Alipay.pid = options[:partner]
       ::Alipay.key = options[:sign]
       #::Alipay.seller_email = options[:email]
       self.service =  options[:service]
+      self.rate =  options[:rate]
     end
 
     def verify?( notify_params )
@@ -18,18 +20,20 @@ module Spree
     # * params
     #   * options - notify_url, return_url, body, subject
     def url( order, options = {} )
+      order_total = (order.total * self.rate).ceil(2)
       pc_direct_params = {
-        total_fee:  order.total
+        total_fee:  order_total
       }
       pc_escrow_params = {
-        :price => order.item_total,
+        :price => (order.item_total*self.rate).ceil(2),
         :quantity => 1,
         :logistics_type=> 'EXPRESS',
-        :logistics_fee => order.shipments.to_a.sum(&:cost),
+        :logistics_fee => (order.shipments.to_a.sum(&:cost)*self.rate).ceil(2),
         :logistics_payment=>'BUYER_PAY' }
       wap_params =  {
-        total_fee:  order.total
+        total_fee:  order_total
         }
+
 
       case service
       when Gateway::AlipayBase::ServiceEnum.alipay_wap
