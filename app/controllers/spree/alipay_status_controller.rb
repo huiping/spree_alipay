@@ -15,7 +15,7 @@ module Spree
         #  WAIT_BUYER_PAY→WAIT_SELLER_SEND_GOODS→WAIT_BUYER_CONFIRM_GOODS→TRADE_FINISHED。
         # 即时到账的交易状态变更顺序依次是:
         #  WAIT_BUYER_PAY→TRADE_FINISHED。
-        complete_order( order, request.request_parameters )
+        complete_order( order, request.query_parameters )
         if order.complete?
           #copy from spree/frontend/checkout_controller
           session[:order_id] = nil
@@ -35,8 +35,8 @@ module Spree
     def alipay_notify
       order = retrieve_order params["out_trade_no"]
       alipay_payment = get_alipay_payment( order )
-      if alipay_payment.payment_method.provider.verify?( request.request_parameters )
-        complete_order( order, request.request_parameters )
+      if alipay_payment.payment_method.provider.verify?( request.query_parameters )
+        complete_order( order, request.query_parameters )
         render text: "success"
       else
         render text: "fail"
