@@ -27,8 +27,27 @@ module Spree
         else
           raise Core::GatewayError.new(Spree.t(:payment_processing_failed))
         end
+      elsif payment_method.is_a?(Spree::Gateway::AlipayDirect)
+        yield
       end
     end
 
+    def process_purchase
+      started_processing!
+
+      # Only for AlipayDirect
+      if payment_method.is_a?(Spree::Gateway::AlipayDirect)
+        if(response_code.split(',').last == 'TRADE_SUCCESS')
+          complete!
+        else
+          failure
+          gateway_error({response_code: response_code})
+        end
+      else
+        result = gateway_action(source, :purchase, :complete)
+      end
+      # This won't be called if gateway_action raises a GatewayError
+      capture_events.create!(amount: amount)
+    end
   end
 end
